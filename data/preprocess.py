@@ -174,11 +174,27 @@ def add_time_features(df):
     return df
 
 
+# 各特征物理合理范围：超出视为异常/缺失，先置 NaN 再插值。
+# 用于清掉国家电网数据里 9.6% 的湿度哨兵值(6553)等坏值，避免污染归一化。
+PHYSICAL_RANGE = {
+    "IRRADIATION": (0.0, 1500.0),
+    "GHI": (0.0, 1500.0),
+    "DNI": (0.0, 1500.0),
+    "AMBIENT_TEMPERATURE": (-60.0, 60.0),
+    "HUMIDITY": (0.0, 100.0),
+    "PRESSURE": (500.0, 1100.0),
+}
+
+
 def clean(df):
-    """清洗：去重排序、补全等间隔时间轴、处理负值与突刺。"""
+    """清洗：去重排序、补全等间隔时间轴、物理范围约束、处理负值与突刺。"""
     df = df[~df.index.duplicated(keep="first")].sort_index()
     # 建立等间隔时间轴，缺失的时间步会变成 NaN
     df = df.resample("{}min".format(config.TIME_STEP_MIN)).asfreq()
+    # 物理范围约束：明显不合理的值置 NaN（如湿度>100%、气压<500hPa），随后插值补齐
+    for col, (lo, hi) in PHYSICAL_RANGE.items():
+        if col in df.columns:
+            df[col] = df[col].where((df[col] >= lo) & (df[col] <= hi))
     # 线性插值补缺失，首尾用前后向填充兜底
     df = df.interpolate(method="linear", limit_direction="both").ffill().bfill()
 

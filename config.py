@@ -87,7 +87,7 @@ MODEL_TYPE = "lstm"           # 骨干网络："lstm" 或 "gru"
 HIDDEN_SIZE = 64
 NUM_LAYERS = 2
 DROPOUT = 0.1
-QUANTILES = [0.1, 0.5, 0.9]   # 分位数回归输出的分位点（可配置）
+QUANTILES = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95]  # 11 个分位数，更细分布，服务 DRO 模糊集
 NUM_QUANTILES = len(QUANTILES)
 
 # ============================================================
