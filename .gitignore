@@ -6,3 +6,5 @@ data/raw/*.csv
 data/processed/
 results/checkpoints/
 results/*.npz
+# 风云卫星原始云图（大文件，可重新下载，不入库）
+vision/data/FY*
