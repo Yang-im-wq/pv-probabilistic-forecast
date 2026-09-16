@@ -9,9 +9,11 @@
 ## 技术链路
 
 ```
-公开光伏数据 → LSTM 点预测基线 → 分位数回归 LSTM（概率预测）→ 预测区间
-                                                              ↓
-                                       [下游：构造模糊集 → 分布鲁棒优化]
+                    ┌─ 数值底座：公开光伏数据 → LSTM 点预测 → 分位数回归 LSTM（概率预测）→ 预测区间 ─┐
+                    │                                                                           ↓
+ （视觉 × 能源交叉）─┤                                                         [下游：模糊集 → 分布鲁棒优化]
+                    │                                                                           ↑
+                    └─ 视觉前兆：风云四号云图 → YOLO 云团检测 → 云量时间序列 → CLOUD_COVER 特征 ────┘
 ```
 
 ---
@@ -34,10 +36,15 @@ project/
 ├── train.py               # 训练入口（--mode point / quantile）
 ├── evaluate.py            # 计算 RMSE / MAE / nRMSE / PICP / PINAW / CRPS
 ├── visualize.py           # 出图（300 dpi）
-├── vision/                # 视觉模块：云检测（阈值法 + U-Net）+ 云量对接，见 vision/README.md
+├── vision/                # 视觉模块：卫星云图 → 云团检测 → 云量，见 vision/README.md
+│   ├── download_batch.py  # NSMC 风云四号 L1/CLM 批量下载（含 429 限流重试）
+│   ├── extract_l1_images.py # L1 HDF → 图像
+│   ├── crop_region.py     # 红外 Ch12 广东沿海裁剪（地理投影定位）
+│   ├── clm_to_yolo.py     # CLM 官方云掩膜 → YOLO 标注数据集
+│   ├── yolo_cloud_series.py # YOLO 检测 → 云量时间序列 CSV
+│   ├── predict_all_val.py # 检测结果可视化（真值 vs 预测）
 │   ├── cloud_detect.py    # 颜色阈值法云检测（无监督基线）
-│   ├── unet.py            # U-Net 云分割模型
-│   └── train_seg.py       # 训练 U-Net（合成数据 demo，CPU 可跑）
+│   └── unet.py / train_seg.py # U-Net 云分割（可选）
 ├── docs/
 │   ├── 运行指南.md         # 从零开始的完整命令序列
 │   └── 原理说明.md         # 通俗解释：为什么概率预测、pinball、PICP/PINAW、DRO 衔接
@@ -133,6 +140,18 @@ kaggle datasets download -d anikannal/solarpowergeneration -p data/raw --unzip
 - **PICP = 区间覆盖率**：标称 90% 的区间实际覆盖 **86.7%**，已很接近标称——比 3 分位数时的 81.0% 明显改善：更多分位数让模型能更准确地刻画 q05/q95 尾部。
 - **PINAW = 归一化区间宽度**：0.111，平均区间宽度约为目标极差的 11%，松紧适中。比之前的 8.3% 略宽，这是"覆盖够"的必要代价（之前的 81% 覆盖其实是区间过窄、过自信）。
 - 两者一起看：PICP 接近标称且 PINAW 合理 = 又准又紧；PICP 明显偏低 = 区间太窄不可全信；PICP 很高但 PINAW 很大 = 区间太宽、无信息量。
+
+### 视觉云检测（前兆信号）
+
+本地辐照度只能反映"已经压在电站头顶的云"；卫星云量能提前看到"还没飘到电站上空的云"，是光伏爬坡/骤降的**前兆信号**。视觉模块用风云四号 B 星（FY-4B）卫星数据训练了云团检测模型：
+
+| 云团检测（YOLOv5s，红外 Ch12）| 结果 |
+|---|---|
+| mAP50 / mAP50-95 | 0.196 / 0.084 |
+| 训练数据 | 346 时次（FY-4B L1 FDI + L2 CLM，广东沿海 256×256 裁剪）|
+| 云量序列 vs CLM 官方真值 | 相关系数 0.699 |
+
+> 关键设计：用**长波红外 12μm 通道**而非可见光——可见光夜间全黑（近一半时次无信号），红外全天候可见云。云量序列已存为 `vision/output/cloud_cover_yolo.csv`，可被 `merge_cloud.load_cloud_series` 直接读入作为 `CLOUD_COVER` 特征。
 
 ---
 

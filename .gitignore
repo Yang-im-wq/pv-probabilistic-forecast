@@ -8,3 +8,32 @@ results/checkpoints/
 results/*.npz
 # 风云卫星原始云图（大文件，可重新下载，不入库）
 vision/data/FY*
+
+# 风云四号卫星数据（大文件，可重新下载）
+data/l1/
+data/clm/
+
+# 卫星数据转出的中间图像
+vision/data/l1_png/
+vision/data/l1_ch02.png
+vision/data/l1_rgb.png
+
+# 下载链接列表（含签名，敏感且会过期）
+links.txt
+
+# YOLO 数据集中间产物（可由脚本重新生成）
+vision/cloud_dataset/
+vision/cloud_dataset_clm/
+vision/cloud_dataset_crop/
+vision/cloud_dataset_crop_ir/
+
+# 调试用中间图（保留成果图）
+vision/output/explain_boxes*.png
+vision/output/explain_boxes*.jpg
+vision/output/crop_check.png
+vision/output/predict_compare.png
+vision/output/predict_compare.jpg
+vision/output/predict_compare_rgb.png
+vision/output/val_overview.jpg
+vision/output/val_overview.png
+vision/output/vis_vs_ir.jpg
