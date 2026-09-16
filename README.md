@@ -161,6 +161,8 @@ kaggle datasets download -d anikannal/solarpowergeneration -p data/raw --unzip
 
 ![云团检测对比](vision/output/predict_compare_cv.png)
 
+> 当前 mAP50 0.196 的水平意味着：大云团能框住、框定位大致正确，但**小云团 / 碎云漏检较多、框大小有偏差**。这是 **4km 分辨率下小目标 + 数据量仍在扩充** 的固有短板——继续加数据或换更大模型（如 yolov5l）可进一步改善。
+
 **③ 云量时间序列**（09-01 ~ 09-16，红 = YOLO 检测，绿 = CLM 真值，r = 0.699）：云量从 20% 一路波动到 100%，完整捕捉了「晴 → 阴 → 晴 → 阴」的演变，这正是光伏出力起伏的前兆节奏。
 
 ![云量曲线](vision/output/cloud_series_cv.png)
