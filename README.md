@@ -153,6 +153,18 @@ kaggle datasets download -d anikannal/solarpowergeneration -p data/raw --unzip
 
 > 关键设计：用**长波红外 12μm 通道**而非可见光——可见光夜间全黑（近一半时次无信号），红外全天候可见云。云量序列已存为 `vision/output/cloud_cover_yolo.csv`，可被 `merge_cloud.load_cloud_series` 直接读入作为 `CLOUD_COVER` 特征。
 
+**① 为什么用红外**：可见光夜间全黑（近一半时次无信号，却仍被 CLM 标了云，污染训练），红外 12μm 靠「云顶温度低」全天候可见云。同一夜间时刻，可见光亮度 6.0（纯黑）vs 红外 114.8（有云）：
+
+![红外 vs 可见光](vision/output/vis_vs_ir.png)
+
+**② 检测效果**：绿框 = CLM 官方真值，红框 = 模型预测（mAP50 0.196）：
+
+![云团检测对比](vision/output/predict_compare_cv.png)
+
+**③ 云量时间序列**（09-01 ~ 09-16，红 = YOLO 检测，绿 = CLM 真值，r = 0.699）：云量从 20% 一路波动到 100%，完整捕捉了「晴 → 阴 → 晴 → 阴」的演变，这正是光伏出力起伏的前兆节奏。
+
+![云量曲线](vision/output/cloud_series_cv.png)
+
 ---
 
 ## 关键图
